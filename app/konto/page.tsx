@@ -50,7 +50,9 @@ export default async function AccountPage({
                   <li key={provider}>{providerLabel(provider)}</li>
                 ))}
               </ul>
-              <p className="soon-note">Tablica tygodnia jeszcze nie zapisuje zadań.</p>
+              <p className="soon-note">
+                Właściwa tablica jest na stronie <a href="/tablica">Tablica</a>.
+              </p>
               <div className="account-actions">
                 {providers.includes("steam") ? null : (
                   <a className="ghost" href="/api/auth/steam/start">
@@ -78,7 +80,7 @@ export default async function AccountPage({
             <>
               <p>
                 Zaloguj się przez Steam albo Google. Jedno konto może mieć oba logowania.
-                Tablica tygodnia jeszcze nie zapisuje zadań.
+                Właściwa tablica jest na stronie <a href="/tablica">Tablica</a>.
               </p>
               <div className="account-actions">
                 <a className="notch" href="/api/auth/steam/start">

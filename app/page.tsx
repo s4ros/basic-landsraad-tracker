@@ -1,12 +1,6 @@
+import { HouseLegend } from "@/components/house-legend";
 import { SiteHeader } from "@/components/site-header";
-
-type TileStatus = "idle" | "ready" | "collected";
-
-const statusText: Record<TileStatus, string | null> = {
-  idle: null,
-  ready: "można odebrać nagrodę",
-  collected: "nagroda odebrana",
-};
+import { tileStatusText, type TileStatus } from "@/lib/tiles";
 
 const tiles: { name: string; status: TileStatus }[][] = [
   [
@@ -89,7 +83,8 @@ export default function HomePage() {
               </a>
             </div>
             <p className="soon-note">
-              Zalogujesz się przez Steam albo Google. Układ rodów jeszcze się nie zapisuje.
+              Zalogujesz się przez Steam albo Google. Właściwa tablica jest na stronie{" "}
+              <a href="/tablica">Tablica</a>.
             </p>
           </div>
         </section>
@@ -126,26 +121,13 @@ export default function HomePage() {
                   {tiles.flat().map((house) => (
                     <span key={house.name} className={`house-tile ${house.status}`}>
                       {house.name}
-                      {statusText[house.status] ? (
-                        <span className="sr">, {statusText[house.status]}</span>
+                      {tileStatusText[house.status] ? (
+                        <span className="sr">, {tileStatusText[house.status]}</span>
                       ) : null}
                     </span>
                   ))}
                 </div>
-                <ul className="board-legend">
-                  <li>
-                    <span className="swatch" aria-hidden="true"></span>
-                    Szary — zadania trwają
-                  </li>
-                  <li>
-                    <span className="swatch ready" aria-hidden="true"></span>
-                    Złoty — nagroda do odebrania
-                  </li>
-                  <li>
-                    <span className="swatch collected" aria-hidden="true"></span>
-                    Zielony — nagroda odebrana
-                  </li>
-                </ul>
+                <HouseLegend />
               </div>
             </figure>
           </div>

@@ -419,6 +419,103 @@ h2 {
   flex: none;
 }
 
+button.house-tile {
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+  appearance: none;
+}
+
+.tile-form {
+  display: grid;
+  min-width: 0;
+}
+
+.board-page {
+  min-height: 100vh;
+  padding: 140px var(--pad) 72px;
+  background:
+    radial-gradient(70% 50% at 80% 0%, rgba(49, 28, 53, 0.55), transparent 70%),
+    var(--ink);
+}
+
+.board-page-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.board-page-inner.narrow {
+  max-width: 40rem;
+}
+
+.board-page h1 {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.back-link {
+  margin: 0 0 12px;
+}
+
+.back-link a,
+.soon-note a {
+  color: var(--gold);
+}
+
+.world-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.world-list a {
+  display: block;
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
+  color: var(--gold);
+  font-family: var(--display);
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.world-field,
+.place-board {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.world-field label,
+.place-list label {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.world-field input,
+.place-list select {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #0c0908;
+  color: var(--cream);
+  font: inherit;
+}
+
+.place-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px 8px;
+  width: 100%;
+}
+
+.place-board .notch,
+.world-field .notch {
+  margin-top: 8px;
+}
+
 .section-lead {
   max-width: 36rem;
   margin-bottom: 36px;
@@ -577,8 +674,13 @@ button.notch {
     padding: 48px var(--pad) 64px;
   }
 
-  .account {
+  .account,
+  .board-page {
     padding-top: 48px;
+  }
+
+  .place-list {
+    grid-template-columns: 1fr;
   }
 
   .mark-name {
