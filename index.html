@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Landsraad Tracker — stan odbioru nagród</title>
+    <meta
+      name="description"
+      content="Nieoficjalne narzędzie dla graczy Dune: Awakening. Po resecie Landsraadu pamiętaj, od którego rodu odebrać nagrodę."
+    />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&family=Raleway:ital,wght@0,400;0,500;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#tresc">Przejdź do treści</a>
+
+    <header class="top">
+      <a class="mark" href="#gora">
+        <span class="mark-kicker">Dune: Awakening</span>
+        <span class="mark-name">Landsraad</span>
+      </a>
+      <nav class="rail" aria-label="Sekcje strony">
+        <a href="#problem">Problem</a>
+        <a href="#zasada">Zasada</a>
+        <span class="rail-soon">Konto<span class="sr">, wkrótce</span></span>
+      </nav>
+    </header>
+
+    <main id="tresc">
+      <section class="hero" id="gora">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <svg class="hero-arcs" viewBox="0 0 1200 800" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="1">
+            <circle cx="980" cy="460" r="180" />
+            <circle cx="980" cy="460" r="320" />
+            <circle cx="980" cy="460" r="480" />
+          </g>
+        </svg>
+
+        <div class="hero-copy">
+          <p class="eyebrow">Co tydzień, nowa sesja</p>
+          <h1>Po resecie nie widać,<br />od którego rodu<br />odebrać nagrodę</h1>
+          <p class="lede">
+            Landsraad publikuje tablicę pięć na pięć. Kolejność rodów jest losowa.
+            Gdy tydzień się kończy, tablica znika, a nagrody zostają u rodów, dla
+            których pracowałeś.
+          </p>
+          <div class="hero-actions">
+            <a class="notch" href="#zasada">
+              <span>Jak to ma działać</span>
+            </a>
+            <a class="ghost" href="#problem">Zobacz problem</a>
+          </div>
+          <p class="soon-note">Steam i Google — logowanie w przygotowaniu. Ta strona niczego nie zapisuje.</p>
+        </div>
+      </section>
+
+      <section class="band" id="problem">
+        <div class="band-inner split">
+          <div class="prose">
+            <p class="diamond" aria-hidden="true"></p>
+            <h2>Tablica znika. Nagrody nie.</h2>
+            <p>
+              W trakcie tygodnia wiesz, które zadania robisz i u którego rodu
+              stoisz w kolejce po odbiór. Po publikacji nowej tablicy zostaje
+              tylko pamięć.
+            </p>
+            <p>
+              Tracker ma trzymać poprzedni układ rodów i stan odbioru: nagroda
+              odebrana albo nadal czeka. Nowa sesja nie kasuje starej.
+            </p>
+            <ul class="facts">
+              <li>Pięć rzędów zadań, pięć kolumn rodów.</li>
+              <li>Kolejność rodów zmienia się co tydzień.</li>
+              <li>Po resecie gra pokazuje już tylko nową tablicę.</li>
+            </ul>
+          </div>
+
+          <figure class="board">
+            <figcaption>
+              <span>Przykładowy układ</span>
+              <span>To nie jest bieżąca tablica z gry</span>
+            </figcaption>
+            <div class="board-frame">
+              <div class="board-head">
+                <span></span>
+                <span>Atreides</span>
+                <span>Harkonnen</span>
+                <span class="pending">Corrino</span>
+                <span>Ecaz</span>
+                <span>Richese</span>
+              </div>
+              <div class="board-body">
+                <div class="board-row">
+                  <span class="row-label">I</span>
+                  <span></span><span></span><span class="cell pending"></span><span></span><span></span>
+                </div>
+                <div class="board-row">
+                  <span class="row-label">II</span>
+                  <span></span><span></span><span class="cell pending"></span><span></span><span></span>
+                </div>
+                <div class="board-row">
+                  <span class="row-label">III</span>
+                  <span></span><span></span><span class="cell pending"></span><span></span><span></span>
+                </div>
+                <div class="board-row">
+                  <span class="row-label">IV</span>
+                  <span></span><span></span><span class="cell pending"></span><span></span><span></span>
+                </div>
+                <div class="board-row">
+                  <span class="row-label">V</span>
+                  <span></span><span></span><span class="cell pending"></span><span></span><span></span>
+                </div>
+              </div>
+              <p class="board-status">
+                <span class="status-mark" aria-hidden="true"></span>
+                Corrino — nagroda nieodebrana z zeszłego tygodnia
+              </p>
+            </div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="band band-deep" id="zasada">
+        <div class="band-inner">
+          <div class="section-lead">
+            <p class="diamond" aria-hidden="true"></p>
+            <h2>Trzy rzeczy, które mają zostać po resecie</h2>
+          </div>
+          <ol class="steps">
+            <li>
+              <span class="step-index">01</span>
+              <h3>Układ tygodnia</h3>
+              <p>Rody w kolejności z tablicy, nie alfabetycznie. Następny tydzień dostaje własny układ.</p>
+            </li>
+            <li>
+              <span class="step-index">02</span>
+              <h3>Rody, u których pracowałeś</h3>
+              <p>Oznaczasz rody, dla których robiłeś zadania. To twój stan, nie wspólna lista graczy.</p>
+            </li>
+            <li>
+              <span class="step-index">03</span>
+              <h3>Odbiór, który da się odhaczyć</h3>
+              <p>Po resecie widać poprzednią sesję i rody, od których nagroda nadal czeka.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <p>
+        Landsraad Tracker jest nieoficjalnym narzędziem fanowskim. Nie jest
+        powiązany z Funcom, Legendary ani właścicielami marki Dune.
+        Dune: Awakening należy do odpowiednich właścicieli znaków towarowych.
+      </p>
+      <p class="colophon-meta">Strona informacyjna. Bez konta, bez zapisu, bez tablicy z gry.</p>
+    </footer>
+  </body>
+</html>
