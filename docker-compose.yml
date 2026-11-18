@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: landsraad
+      POSTGRES_PASSWORD: landsraad
+      POSTGRES_DB: landsraad
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U landsraad -d landsraad"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    image: postgres:17-alpine
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: landsraad
+      PGPASSWORD: landsraad
+      PGDATABASE: landsraad
+    volumes:
+      - ./db/migrations:/migrations:ro
+      - ./db/migrate.sh:/migrate.sh:ro
+    entrypoint: ["/bin/sh", "/migrate.sh"]
+    restart: "no"
+
+  web:
+    build: .
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://landsraad:landsraad@db:5432/landsraad
+      AUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: "true"
+
+volumes:
+  pgdata:

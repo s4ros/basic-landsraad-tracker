@@ -13,8 +13,8 @@
   --purple-deep: #241428;
   --line: rgba(244, 207, 139, 0.35);
   --line-soft: rgba(244, 207, 139, 0.16);
-  --display: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
-  --body: "Raleway", "Segoe UI", sans-serif;
+  --display: var(--font-display), "Avenir Next", "Segoe UI", sans-serif;
+  --body: var(--font-body), "Segoe UI", sans-serif;
   --pad: clamp(20px, 4vw, 56px);
 }
 
@@ -84,8 +84,7 @@ a {
   pointer-events: none;
 }
 
-.top a,
-.top .rail-soon {
+.top a {
   pointer-events: auto;
 }
 
@@ -98,7 +97,6 @@ a {
 
 .mark-kicker,
 .rail a,
-.rail-soon,
 .eyebrow,
 .board figcaption,
 .step-index,
@@ -130,20 +128,15 @@ a {
   gap: 12px;
 }
 
-.rail a,
-.rail-soon {
+.rail a {
   font-size: 0.72rem;
   color: var(--gold);
   text-decoration: none;
 }
 
-.rail a:hover {
+.rail a:hover,
+.rail a[aria-current="page"] {
   color: var(--cream);
-}
-
-.rail-soon {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .hero {
@@ -482,9 +475,86 @@ h3 {
 }
 
 a:focus-visible,
+button:focus-visible,
 .skip:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 3px;
+}
+
+.account {
+  min-height: 100vh;
+  padding: 140px var(--pad) 72px;
+  background:
+    radial-gradient(70% 50% at 80% 0%, rgba(49, 28, 53, 0.55), transparent 70%),
+    var(--ink);
+}
+
+.account-panel {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.account h1 {
+  margin: 0 0 18px;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.account h2 {
+  margin: 28px 0 0;
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+  color: var(--cream);
+}
+
+.account p {
+  margin: 0 0 14px;
+}
+
+.identity-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.identity-list li {
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+  font-family: var(--display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.notice {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--gold-deep);
+  color: var(--gold);
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.account-actions form {
+  margin: 0;
+}
+
+.account-actions + .soon-note {
+  margin-top: 18px;
+}
+
+button.notch,
+button.ghost {
+  font: inherit;
+  cursor: pointer;
+}
+
+button.notch {
+  border: 0;
 }
 
 @media (max-width: 860px) {
@@ -507,6 +577,10 @@ a:focus-visible,
   .hero {
     min-height: auto;
     padding: 48px var(--pad) 64px;
+  }
+
+  .account {
+    padding-top: 48px;
   }
 
   .mark-name {
