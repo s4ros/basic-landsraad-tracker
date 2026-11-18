@@ -355,69 +355,67 @@ h2 {
     #171310;
 }
 
-.board-head,
-.board-row {
+.house-grid {
   display: grid;
-  grid-template-columns: 28px repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
-  align-items: stretch;
 }
 
-.board-head {
-  margin-bottom: 8px;
+.house-tile,
+.swatch {
+  border: 1px solid rgba(168, 164, 156, 0.45);
+  background: rgba(255, 255, 255, 0.04);
+  color: #b7b2aa;
 }
 
-.board-head span,
-.row-label {
-  font-family: var(--display);
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  text-align: center;
-  overflow: hidden;
-}
-
-.board-head span.pending {
-  color: var(--gold);
-}
-
-.board-row + .board-row {
-  margin-top: 8px;
-}
-
-.row-label {
+.house-tile {
   display: grid;
   place-items: center;
-  color: var(--gold-deep);
+  min-height: 58px;
+  padding: 8px 4px;
+  font-family: var(--display);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-align: center;
 }
 
-.board-row span:not(.row-label) {
-  min-height: 46px;
-  border: 1px solid var(--line-soft);
-  background: rgba(255, 245, 210, 0.03);
+.house-tile.ready,
+.swatch.ready {
+  color: #241428;
+  border-color: var(--gold);
+  background: var(--gold);
 }
 
-.board-row span.pending {
-  border-color: rgba(244, 207, 139, 0.9);
-  background: rgba(244, 207, 139, 0.22);
+.house-tile.collected,
+.swatch.collected {
+  color: #e7f6ec;
+  border-color: #8fd4a4;
+  background: #2f7d49;
 }
 
-.board-status {
+.board-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.board-legend li {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 14px 0 0;
-  color: var(--gold);
-  font-size: 0.92rem;
+  gap: 8px;
 }
 
-.status-mark {
-  width: 8px;
-  height: 8px;
-  background: var(--gold);
-  transform: rotate(45deg);
+.swatch {
+  width: 12px;
+  height: 12px;
   flex: none;
 }
 
@@ -597,15 +595,14 @@ button.notch {
     align-items: flex-start;
   }
 
-  .board-head,
-  .board-row {
+  .house-grid {
     gap: 4px;
   }
 
-  .board-head span,
-  .row-label {
-    font-size: 0.52rem;
-    letter-spacing: 0;
+  .house-tile {
+    min-height: 48px;
+    font-size: 0.5rem;
+    letter-spacing: 0.02em;
   }
 }
 

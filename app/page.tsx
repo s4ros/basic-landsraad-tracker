@@ -1,14 +1,50 @@
 import { SiteHeader } from "@/components/site-header";
 
-const rows = ["I", "II", "III", "IV", "V"] as const;
+type TileStatus = "idle" | "ready" | "collected";
 
-const houses = [
-  { name: "Atreides", pending: false },
-  { name: "Harkonnen", pending: false },
-  { name: "Corrino", pending: true },
-  { name: "Ecaz", pending: false },
-  { name: "Richese", pending: false },
-] as const;
+const statusText: Record<TileStatus, string | null> = {
+  idle: null,
+  ready: "można odebrać nagrodę",
+  collected: "nagroda odebrana",
+};
+
+const tiles: { name: string; status: TileStatus }[][] = [
+  [
+    { name: "Imota", status: "idle" },
+    { name: "Moritani", status: "idle" },
+    { name: "Hurata", status: "collected" },
+    { name: "Thorvald", status: "idle" },
+    { name: "Alexin", status: "idle" },
+  ],
+  [
+    { name: "Wydras", status: "idle" },
+    { name: "Kenola", status: "idle" },
+    { name: "Ecaz", status: "ready" },
+    { name: "Wallach", status: "idle" },
+    { name: "Mutelli", status: "collected" },
+  ],
+  [
+    { name: "Sor", status: "idle" },
+    { name: "Dyvetz", status: "idle" },
+    { name: "Maros", status: "idle" },
+    { name: "Argosaz", status: "idle" },
+    { name: "Novebruns", status: "idle" },
+  ],
+  [
+    { name: "Spinnette", status: "idle" },
+    { name: "Wayku", status: "ready" },
+    { name: "Taligari", status: "idle" },
+    { name: "Lindaren", status: "idle" },
+    { name: "Vernius", status: "idle" },
+  ],
+  [
+    { name: "Tseida", status: "idle" },
+    { name: "Varota", status: "idle" },
+    { name: "Richese", status: "collected" },
+    { name: "Mikarrol", status: "idle" },
+    { name: "Hagal", status: "idle" },
+  ],
+];
 
 export default function HomePage() {
   return (
@@ -53,7 +89,7 @@ export default function HomePage() {
               </a>
             </div>
             <p className="soon-note">
-              Zalogujesz się przez Steam albo Google. Tablica jeszcze nie zapisuje zadań.
+              Zalogujesz się przez Steam albo Google. Układ rodów jeszcze się nie zapisuje.
             </p>
           </div>
         </section>
@@ -69,12 +105,13 @@ export default function HomePage() {
                 tylko pamięć.
               </p>
               <p>
-                Tracker ma trzymać poprzedni układ rodów i stan odbioru: nagroda
-                odebrana albo nadal czeka. Nowa sesja nie kasuje starej.
+                Właściciel przełącza kolor rodu ręcznie. Szary, dopóki zadania
+                trwają. Złoty, kiedy nagrodę można odebrać. Zielony po odbiorze.
+                Nowa sesja nie kasuje starej.
               </p>
               <ul className="facts">
-                <li>Pięć rzędów zadań, pięć kolumn rodów.</li>
-                <li>Kolejność rodów zmienia się co tydzień.</li>
+                <li>Dwadzieścia pięć pól. Na każdym jeden ród.</li>
+                <li>Układ rodów zmienia się co tydzień.</li>
                 <li>Po resecie gra pokazuje już tylko nową tablicę.</li>
               </ul>
             </div>
@@ -85,31 +122,30 @@ export default function HomePage() {
                 <span>To nie jest bieżąca tablica z gry</span>
               </figcaption>
               <div className="board-frame">
-                <div className="board-head">
-                  <span></span>
-                  {houses.map((house) => (
-                    <span key={house.name} className={house.pending ? "pending" : undefined}>
+                <div className="house-grid">
+                  {tiles.flat().map((house) => (
+                    <span key={house.name} className={`house-tile ${house.status}`}>
                       {house.name}
+                      {statusText[house.status] ? (
+                        <span className="sr">, {statusText[house.status]}</span>
+                      ) : null}
                     </span>
                   ))}
                 </div>
-                <div className="board-body">
-                  {rows.map((row) => (
-                    <div className="board-row" key={row}>
-                      <span className="row-label">{row}</span>
-                      {houses.map((house) => (
-                        <span
-                          key={house.name}
-                          className={house.pending ? "cell pending" : undefined}
-                        ></span>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                <p className="board-status">
-                  <span className="status-mark" aria-hidden="true"></span>
-                  Corrino — nagroda nieodebrana z zeszłego tygodnia
-                </p>
+                <ul className="board-legend">
+                  <li>
+                    <span className="swatch" aria-hidden="true"></span>
+                    Szary — zadania trwają
+                  </li>
+                  <li>
+                    <span className="swatch ready" aria-hidden="true"></span>
+                    Złoty — nagroda do odebrania
+                  </li>
+                  <li>
+                    <span className="swatch collected" aria-hidden="true"></span>
+                    Zielony — nagroda odebrana
+                  </li>
+                </ul>
               </div>
             </figure>
           </div>
@@ -129,13 +165,13 @@ export default function HomePage() {
               </li>
               <li>
                 <span className="step-index">02</span>
-                <h3>Rody, u których pracowałeś</h3>
-                <p>Oznaczasz rody, dla których robiłeś zadania. To twój stan, nie wspólna lista graczy.</p>
+                <h3>Złoty, kiedy nagroda czeka</h3>
+                <p>Właściciel przełącza ród na złoty, gdy zadania są zrobione i nagrodę można odebrać.</p>
               </li>
               <li>
                 <span className="step-index">03</span>
-                <h3>Odbiór, który da się odhaczyć</h3>
-                <p>Po resecie widać poprzednią sesję i rody, od których nagroda nadal czeka.</p>
+                <h3>Zielony po odbiorze</h3>
+                <p>Po odebraniu nagród ten sam kafelek staje się zielony. Po resecie widać poprzedni układ.</p>
               </li>
             </ol>
           </div>
