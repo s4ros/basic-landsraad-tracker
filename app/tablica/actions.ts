@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { BoardError, createWorld, cycleTile, readPlacements, savePlacements } from "@/lib/board";
+import { BoardError, closeWeek, createWorld, cycleTile, readPlacements, savePlacements } from "@/lib/board";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -43,6 +43,21 @@ export async function savePlacementsAction(formData: FormData) {
       worldId: path.slice("/tablica/".length),
       cells: readPlacements(formData),
     });
+  } catch (error) {
+    if (error instanceof BoardError) redirect(`${path}?error=${error.code}`);
+    throw error;
+  }
+  redirect(path);
+}
+
+export async function closeWeekAction(formData: FormData) {
+  const path = worldPath(formData.get("worldId"));
+  const userId = await editorId();
+  if (!path || !userId) redirect(path ? `${path}?error=forbidden` : "/tablica?error=forbidden");
+  if (formData.get("confirm") !== "yes") redirect(`${path}?error=confirm`);
+
+  try {
+    await closeWeek({ userId, worldId: path.slice("/tablica/".length) });
   } catch (error) {
     if (error instanceof BoardError) redirect(`${path}?error=${error.code}`);
     throw error;

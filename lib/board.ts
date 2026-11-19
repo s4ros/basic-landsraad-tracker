@@ -5,22 +5,23 @@ import { cycleStatus, isTileStatus, type TileStatus } from "@/lib/tiles";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export class BoardError extends Error {
-  constructor(
-    readonly code:
-      | "name"
-      | "duplicate"
-      | "forbidden"
-      | "taken"
-      | "missing"
-      | "closed"
-      | "empty"
-      | "confirm"
-      | "already"
-      | "account"
-      | "image",
-  ) {
+  readonly code:
+    | "name"
+    | "duplicate"
+    | "forbidden"
+    | "taken"
+    | "missing"
+    | "closed"
+    | "empty"
+    | "confirm"
+    | "already"
+    | "account"
+    | "image";
+
+  constructor(code: BoardError["code"]) {
     super(code);
     this.name = "BoardError";
+    this.code = code;
   }
 }
 
@@ -187,19 +188,12 @@ export async function createWorld(input: { userId: string; name: string }) {
   }
 }
 
-export async function loadOpenBoard(worldId: string): Promise<OpenBoard | "missing" | "closed"> {
-  if (!isUuid(worldId)) return "missing";
-  const world = await getPool().query<{ id: string; name: string; week_id: string | null; sequence: number | null }>(
-    `select w.id, w.name, wk.id as week_id, wk.sequence
-     from worlds w
-     left join weeks wk on wk.world_id = w.id and wk.status = 'open'
-     where w.id = $1`,
-    [worldId],
-  );
-  const header = world.rows[0];
-  if (!header) return "missing";
-  if (!header.week_id || header.sequence === null) return "closed";
-
+async function readBoard(input: {
+  worldId: string;
+  worldName: string;
+  weekId: string;
+  sequence: number;
+}): Promise<OpenBoard | "missing"> {
   const cells = await getPool().query<{
     row: number;
     column_position: number;
@@ -212,15 +206,15 @@ export async function loadOpenBoard(worldId: string): Promise<OpenBoard | "missi
      left join houses h on h.id = c.house_id
      where c.week_id = $1
      order by c."row", c.column_position`,
-    [header.week_id],
+    [input.weekId],
   );
   if (cells.rows.length !== 25) return "missing";
 
   return {
-    worldId: header.id,
-    worldName: header.name,
-    weekId: header.week_id,
-    sequence: header.sequence,
+    worldId: input.worldId,
+    worldName: input.worldName,
+    weekId: input.weekId,
+    sequence: input.sequence,
     cells: cells.rows.map((cell) => ({
       row: Number(cell.row),
       column: Number(cell.column_position),
@@ -229,6 +223,84 @@ export async function loadOpenBoard(worldId: string): Promise<OpenBoard | "missi
       status: isTileStatus(cell.status) ? cell.status : "idle",
     })),
   };
+}
+
+export async function loadOpenBoard(worldId: string): Promise<OpenBoard | "missing" | "closed"> {
+  if (!isUuid(worldId)) return "missing";
+  const world = await getPool().query<{ id: string; name: string; week_id: string | null; sequence: number | null }>(
+    `select w.id, w.name, wk.id as week_id, wk.sequence
+     from worlds w
+     left join weeks wk on wk.world_id = w.id and wk.status = 'open'
+     where w.id = $1`,
+    [worldId],
+  );
+  const header = world.rows[0];
+  if (!header) return "missing";
+  if (!header.week_id || header.sequence === null) return "closed";
+  return readBoard({
+    worldId: header.id,
+    worldName: header.name,
+    weekId: header.week_id,
+    sequence: header.sequence,
+  });
+}
+
+export async function listClosedWeeks(worldId: string): Promise<{ sequence: number }[]> {
+  if (!isUuid(worldId)) return [];
+  const result = await getPool().query<{ sequence: number }>(
+    `select sequence
+     from weeks
+     where world_id = $1 and status = 'closed'
+     order by sequence desc`,
+    [worldId],
+  );
+  return result.rows.map((row) => ({ sequence: Number(row.sequence) }));
+}
+
+export async function loadClosedWeek(worldId: string, sequence: number): Promise<OpenBoard | "missing" | "open"> {
+  if (!isUuid(worldId) || !Number.isInteger(sequence) || sequence < 1 || sequence > 100000) return "missing";
+  const week = await getPool().query<{ name: string; week_id: string; status: string }>(
+    `select w.name, wk.id as week_id, wk.status
+     from weeks wk
+     join worlds w on w.id = wk.world_id
+     where wk.world_id = $1 and wk.sequence = $2`,
+    [worldId, sequence],
+  );
+  const row = week.rows[0];
+  if (!row) return "missing";
+  if (row.status === "open") return "open";
+  if (row.status !== "closed") return "missing";
+  return readBoard({ worldId, worldName: row.name, weekId: row.week_id, sequence });
+}
+
+export async function closeWeek(input: { userId: string; worldId: string }) {
+  if (!isUuid(input.userId) || !isUuid(input.worldId)) throw new BoardError("forbidden");
+  return withTransaction(async (client) => {
+    await assertEditor(client, input.userId, input.worldId);
+    const weekId = await openWeekId(client, input.worldId);
+    const closed = await client.query<{ sequence: number }>(
+      `update weeks
+       set status = 'closed', closed_at = now(), closed_by = $2
+       where id = $1 and status = 'open'
+       returning sequence`,
+      [weekId, input.userId],
+    );
+    const sequence = closed.rows[0]?.sequence;
+    if (sequence === undefined) throw new BoardError("closed");
+    const nextSequence = Number(sequence) + 1;
+    const next = await client.query<{ id: string }>(
+      `insert into weeks (world_id, sequence, status) values ($1, $2, 'open') returning id`,
+      [input.worldId, nextSequence],
+    );
+    await client.query(
+      `insert into board_cells (week_id, "row", column_position)
+       select $1, r, c
+       from generate_series(1, 5) as r
+       cross join generate_series(1, 5) as c`,
+      [next.rows[0].id],
+    );
+    return { closedSequence: Number(sequence), nextSequence };
+  });
 }
 
 export async function listHouses() {

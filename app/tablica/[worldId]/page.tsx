@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { HouseLegend } from "@/components/house-legend";
 import { SiteHeader } from "@/components/site-header";
-import { boardErrorText, canEditWorld, listHouses, loadOpenBoard } from "@/lib/board";
+import { boardErrorText, canEditWorld, listClosedWeeks, listHouses, loadOpenBoard } from "@/lib/board";
 import { tileStatusText } from "@/lib/tiles";
-import { cycleTileAction, savePlacementsAction } from "../actions";
+import { closeWeekAction, cycleTileAction, savePlacementsAction } from "../actions";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,6 +26,7 @@ export default async function WorldBoardPage({
   const session = await auth();
   const canEdit = board !== "closed" && (await canEditWorld(session?.userId, worldId));
   const houses = board !== "closed" && canEdit ? await listHouses() : [];
+  const closedWeeks = board === "closed" ? [] : await listClosedWeeks(worldId);
 
   return (
     <>
@@ -49,6 +50,15 @@ export default async function WorldBoardPage({
             <>
               <h1>{board.worldName}</h1>
               <p>Tydzień {board.sequence}. Wspólna tablica. Kolor widzą wszyscy.</p>
+              {closedWeeks.length > 0 ? (
+                <ul className="world-list">
+                  {closedWeeks.map((week) => (
+                    <li key={week.sequence}>
+                      <a href={`/tablica/${board.worldId}/tydzien/${week.sequence}`}>Tydzień {week.sequence}</a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               {canEdit ? <p>Kliknij ród, żeby zmienić kolor: szary, złoty, potem zielony.</p> : null}
               <figure className="board">
                 <div className="board-frame">
@@ -87,6 +97,19 @@ export default async function WorldBoardPage({
                   <HouseLegend />
                 </div>
               </figure>
+              {canEdit ? (
+                <form className="place-board" action={closeWeekAction}>
+                  <h2>Zamknij tydzień</h2>
+                  <p>Robisz to przy resecie w grze. Ta tablica zostaje do wglądu, a kolejna startuje pusta.</p>
+                  <input type="hidden" name="worldId" value={board.worldId} />
+                  <label>
+                    <input type="checkbox" name="confirm" value="yes" required /> Zamykam ten tydzień. Układu i kolorów nie da się już zmienić.
+                  </label>
+                  <button className="notch" type="submit">
+                    <span>Zamknij tydzień</span>
+                  </button>
+                </form>
+              ) : null}
               {canEdit ? (
                 <form className="place-board" action={savePlacementsAction}>
                   <h2>Ułóż rody</h2>
