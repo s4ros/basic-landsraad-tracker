@@ -42,6 +42,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           provider: "google",
           subject: account.providerAccountId,
           currentUserId: await readSessionUserId(),
+          displayName: user.name ?? "",
+          email: user.email ?? null,
         });
         (user as { userId?: string }).userId = userId;
         return true;

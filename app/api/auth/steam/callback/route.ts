@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { IdentityTaken, linkIdentity } from "@/lib/identity";
+import { steamDisplayName } from "@/lib/steam-profile";
 import { appOrigin, readSessionUserId, sessionCookie, sessionCookieValue } from "@/lib/session-cookie";
 
 export const runtime = "nodejs";
@@ -82,6 +83,8 @@ export async function GET(request: Request) {
       provider: "steam",
       subject: steamId,
       currentUserId: await readSessionUserId(),
+      displayName: await steamDisplayName(steamId),
+      email: null,
     });
     const response = redirectToAccount(origin);
     const cookie = sessionCookie();

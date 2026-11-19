@@ -46,8 +46,11 @@ export default async function AccountPage({
               {summary.isOwner ? <p>To konto jest właścicielem aplikacji.</p> : null}
               <h2>Połączone logowania</h2>
               <ul className="identity-list">
-                {providers.map((provider) => (
-                  <li key={provider}>{providerLabel(provider)}</li>
+                {summary.labels.map((label) => (
+                  <li key={label.provider}>
+                    {providerLabel(label.provider)}
+                    {label.displayName ? ` — ${label.displayName}` : ""}
+                  </li>
                 ))}
               </ul>
               <p className="soon-note">
