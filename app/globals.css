@@ -371,7 +371,7 @@ h2 {
 .house-tile {
   display: grid;
   place-items: center;
-  min-height: 58px;
+  min-height: 84px;
   padding: 8px 4px;
   font-family: var(--display);
   font-size: 0.62rem;
@@ -417,6 +417,12 @@ h2 {
   width: 12px;
   height: 12px;
   flex: none;
+}
+
+.house-mark {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 button.house-tile {
@@ -702,7 +708,7 @@ button.notch {
   }
 
   .house-tile {
-    min-height: 48px;
+    min-height: 72px;
     font-size: 0.5rem;
     letter-spacing: 0.02em;
   }

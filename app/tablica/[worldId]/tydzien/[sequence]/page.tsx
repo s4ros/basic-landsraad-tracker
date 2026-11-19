@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { HouseLegend } from "@/components/house-legend";
+import { HouseMark } from "@/components/house-mark";
 import { SiteHeader } from "@/components/site-header";
 import { loadClosedWeek } from "@/lib/board";
 import { tileStatusText } from "@/lib/tiles";
@@ -42,6 +43,7 @@ export default async function ClosedWeekPage({
                   const label = `Wiersz ${cell.row}, kolumna ${cell.column}`;
                   return (
                     <span key={label} className={`house-tile ${cell.houseName ? cell.status : "idle"}`}>
+                      {cell.houseName ? <HouseMark name={cell.houseName} /> : null}
                       {cell.houseName}
                       <span className="sr">
                         {cell.houseName

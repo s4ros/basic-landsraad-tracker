@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { HouseLegend } from "@/components/house-legend";
+import { HouseMark } from "@/components/house-mark";
 import { SiteHeader } from "@/components/site-header";
 import { boardErrorText, canEditWorld, listClosedWeeks, listHouses, loadOpenBoard } from "@/lib/board";
 import { tileStatusText } from "@/lib/tiles";
@@ -68,6 +69,7 @@ export default async function WorldBoardPage({
                       if (!cell.houseName || !canEdit) {
                         return (
                           <span key={label} className={`house-tile ${cell.houseName ? cell.status : "idle"}`}>
+                            {cell.houseName ? <HouseMark name={cell.houseName} /> : null}
                             {cell.houseName}
                             <span className="sr">
                               {cell.houseName
@@ -83,6 +85,7 @@ export default async function WorldBoardPage({
                           <input type="hidden" name="row" value={cell.row} />
                           <input type="hidden" name="column" value={cell.column} />
                           <button type="submit" className={`house-tile ${cell.status}`}>
+                            <HouseMark name={cell.houseName} />
                             {cell.houseName}
                             <span className="sr">
                               {label}
