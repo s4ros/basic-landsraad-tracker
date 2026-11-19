@@ -5,7 +5,20 @@ import { cycleStatus, isTileStatus, type TileStatus } from "@/lib/tiles";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export class BoardError extends Error {
-  constructor(readonly code: "name" | "duplicate" | "forbidden" | "taken" | "missing" | "closed" | "empty") {
+  constructor(
+    readonly code:
+      | "name"
+      | "duplicate"
+      | "forbidden"
+      | "taken"
+      | "missing"
+      | "closed"
+      | "empty"
+      | "confirm"
+      | "already"
+      | "account"
+      | "image",
+  ) {
     super(code);
     this.name = "BoardError";
   }
@@ -19,6 +32,10 @@ export const boardErrorText: Record<BoardError["code"], string> = {
   missing: "Nie ma takiego świata albo pola.",
   closed: "Ten tydzień jest zamknięty.",
   empty: "Najpierw ustaw ród na tym polu.",
+  confirm: "Zaznacz, że zamykasz tydzień.",
+  already: "Ta osoba już edytuje ten świat.",
+  account: "Nie ma takiego konta.",
+  image: "Wgraj plik PNG albo JPEG, do 8 MB.",
 };
 
 export type WorldListItem = { id: string; name: string };
