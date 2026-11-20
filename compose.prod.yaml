@@ -1,0 +1,78 @@
+name: landsraad
+
+networks:
+  internal:
+  traefik:
+    external: true
+    name: traefik
+
+volumes:
+  pgdata:
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: landsraad-db
+    restart: always
+    environment:
+      POSTGRES_USER: landsraad
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: landsraad
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U landsraad -d landsraad"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    networks:
+      - internal
+
+  migrate:
+    image: postgres:17-alpine
+    container_name: landsraad-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: landsraad
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      PGDATABASE: landsraad
+    volumes:
+      - ./db/migrations:/migrations:ro
+      - ./db/migrate.sh:/migrate.sh:ro
+    entrypoint: ["/bin/sh", "/migrate.sh"]
+    restart: "no"
+    networks:
+      - internal
+
+  web:
+    image: landsraad-web:current
+    pull_policy: never
+    container_name: landsraad-web
+    restart: always
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://landsraad:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/landsraad
+      AUTH_URL: https://${PUBLIC_HOST:?set PUBLIC_HOST}
+      AUTH_TRUST_HOST: "true"
+      AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET}
+    networks:
+      - internal
+      - traefik
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    labels:
+      com.centurylinklabs.watchtower.enable: "false"
+      traefik.enable: "true"
+      traefik.docker.network: traefik
+      traefik.http.services.landsraad.loadbalancer.server.port: "3000"
+      traefik.http.routers.landsraad.rule: "Host(`${PUBLIC_HOST:?set PUBLIC_HOST}`)"
+      traefik.http.routers.landsraad.entrypoints: websecure
+      traefik.http.routers.landsraad.tls: "true"
+      traefik.http.routers.landsraad.tls.certresolver: myresolver
