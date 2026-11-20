@@ -3,5 +3,5 @@ import { houseMarkPath } from "@/lib/house-marks";
 export function HouseMark({ name }: { name: string }) {
   const src = houseMarkPath(name);
   if (!src) return null;
-  return <img className="house-mark" src={src} alt="" width={32} height={32} />;
+  return <img className="house-mark" src={src} alt="" />;
 }
