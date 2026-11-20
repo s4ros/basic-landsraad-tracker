@@ -1,4 +1,5 @@
 import { HouseLegend } from "@/components/house-legend";
+import { HouseMark } from "@/components/house-mark";
 import { SiteHeader } from "@/components/site-header";
 import { tileStatusText, type TileStatus } from "@/lib/tiles";
 
@@ -120,6 +121,7 @@ export default function HomePage() {
                 <div className="house-grid">
                   {tiles.flat().map((house) => (
                     <span key={house.name} className={`house-tile ${house.status}`}>
+                      <HouseMark name={house.name} />
                       {house.name}
                       {tileStatusText[house.status] ? (
                         <span className="sr">, {tileStatusText[house.status]}</span>
