@@ -2,7 +2,17 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { before, test } from "node:test";
 import { Client } from "pg";
-import { BoardError, closeWeek, createWorld, cycleTile, loadClosedWeek, loadOpenBoard, savePlacements } from "@/lib/board";
+import {
+  BoardError,
+  clearHouse,
+  closeWeek,
+  createWorld,
+  cycleTile,
+  loadClosedWeek,
+  loadOpenBoard,
+  placeHouse,
+  savePlacements,
+} from "@/lib/board";
 import { getPool } from "@/lib/db";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -65,6 +75,42 @@ before(async () => {
   await ensureTestDatabase();
   await migrate();
 });
+
+async function openCells(worldId: string) {
+  const result = await getPool().query<{
+    row: number;
+    column_position: number;
+    house_id: number | null;
+    status: string;
+  }>(
+    `select c."row", c.column_position, c.house_id, c.status
+     from board_cells c
+     join weeks wk on wk.id = c.week_id
+     where wk.world_id = $1 and wk.status = 'open'
+     order by c."row", c.column_position`,
+    [worldId],
+  );
+  return result.rows.map((cell) => ({
+    row: Number(cell.row),
+    column: Number(cell.column_position),
+    houseId: cell.house_id === null ? null : Number(cell.house_id),
+    status: cell.status,
+  }));
+}
+
+function cellOf(cells: Awaited<ReturnType<typeof openCells>>, row: number, column: number) {
+  const cell = cells.find((item) => item.row === row && item.column === column);
+  assert.ok(cell);
+  return cell;
+}
+
+async function rejectsCode(run: () => Promise<unknown>, code: BoardError["code"]) {
+  await assert.rejects(run, (error: unknown) => {
+    assert.ok(error instanceof BoardError);
+    assert.equal(error.code, code);
+    return true;
+  });
+}
 
 function emptyGrid(houseId: number | null) {
   const cells: { row: number; column: number; houseId: number | null }[] = [];
@@ -150,6 +196,110 @@ test("an editor closes the open week and the next board starts empty", async () 
     });
     const after = await loadOpenBoard(worldId);
     assert.deepEqual(after, before);
+  } finally {
+    await pool.query("delete from worlds where name = $1", [name]);
+    if (createdUserIds.length > 0) {
+      await pool.query("delete from users where id = any($1::uuid[])", [createdUserIds]);
+    }
+  }
+});
+
+test("placeHouse and clearHouse change one open cell", async () => {
+  const pool = getPool();
+  const name = `test-place-${Date.now()}`;
+  const createdUserIds: string[] = [];
+  let ownerId = "";
+  try {
+    const existingOwner = await pool.query<{ id: string }>("select id from users where is_owner");
+    if (existingOwner.rows[0]) {
+      ownerId = existingOwner.rows[0].id;
+    } else {
+      const created = await pool.query<{ id: string }>("insert into users (is_owner) values (true) returning id");
+      ownerId = created.rows[0].id;
+      createdUserIds.push(ownerId);
+    }
+    const stranger = await pool.query<{ id: string }>("insert into users (is_owner) values (false) returning id");
+    const strangerId = stranger.rows[0].id;
+    createdUserIds.push(strangerId);
+
+    const worldId = await createWorld({ userId: ownerId, name });
+
+    await placeHouse({ userId: ownerId, worldId, row: 1, column: 1, houseId: 1 });
+    const placed = await openCells(worldId);
+    assert.deepEqual(cellOf(placed, 1, 1), { row: 1, column: 1, houseId: 1, status: "idle" });
+
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 1, column: 2, houseId: 1 }), "taken");
+    const duplicated = await openCells(worldId);
+    assert.deepEqual(cellOf(duplicated, 1, 2), { row: 1, column: 2, houseId: null, status: "idle" });
+    assert.deepEqual(cellOf(duplicated, 1, 1), { row: 1, column: 1, houseId: 1, status: "idle" });
+
+    await cycleTile({ userId: ownerId, worldId, row: 1, column: 1 });
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 1, column: 1, houseId: 2 }), "taken");
+    const occupied = await openCells(worldId);
+    assert.deepEqual(cellOf(occupied, 1, 1), { row: 1, column: 1, houseId: 1, status: "ready" });
+
+    await clearHouse({ userId: ownerId, worldId, row: 1, column: 1 });
+    const cleared = await openCells(worldId);
+    assert.deepEqual(cellOf(cleared, 1, 1), { row: 1, column: 1, houseId: null, status: "idle" });
+    await placeHouse({ userId: ownerId, worldId, row: 2, column: 2, houseId: 1 });
+    const moved = await openCells(worldId);
+    assert.deepEqual(cellOf(moved, 2, 2), { row: 2, column: 2, houseId: 1, status: "idle" });
+
+    await rejectsCode(() => clearHouse({ userId: ownerId, worldId, row: 1, column: 2 }), "empty");
+    assert.deepEqual(cellOf(await openCells(worldId), 1, 2), { row: 1, column: 2, houseId: null, status: "idle" });
+
+    const beforeStranger = await openCells(worldId);
+    await rejectsCode(() => placeHouse({ userId: strangerId, worldId, row: 1, column: 2, houseId: 2 }), "forbidden");
+    await rejectsCode(() => clearHouse({ userId: strangerId, worldId, row: 2, column: 2 }), "forbidden");
+    assert.deepEqual(await openCells(worldId), beforeStranger);
+
+    const beforeBad = await openCells(worldId);
+    await rejectsCode(
+      () => placeHouse({ userId: "not-a-uuid", worldId, row: 1, column: 2, houseId: 2 }),
+      "forbidden",
+    );
+    await rejectsCode(
+      () => placeHouse({ userId: ownerId, worldId: "not-a-uuid", row: 1, column: 2, houseId: 2 }),
+      "forbidden",
+    );
+    await rejectsCode(
+      () => clearHouse({ userId: "not-a-uuid", worldId, row: 2, column: 2 }),
+      "forbidden",
+    );
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 0, column: 1, houseId: 2 }), "missing");
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 6, column: 1, houseId: 2 }), "missing");
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 1, column: 0, houseId: 2 }), "missing");
+    await rejectsCode(() => clearHouse({ userId: ownerId, worldId, row: 1, column: 6 }), "missing");
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 1, column: 2, houseId: 0 }), "missing");
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 1, column: 2, houseId: 26 }), "missing");
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 1, column: 2, houseId: 1.5 }), "missing");
+    assert.deepEqual(await openCells(worldId), beforeBad);
+
+    await closeWeek({ userId: ownerId, worldId });
+    await pool.query(
+      `update weeks set status = 'closed', closed_at = now(), closed_by = $2
+       where world_id = $1 and status = 'open'`,
+      [worldId, ownerId],
+    );
+    const frozen = await pool.query(
+      `select wk.sequence, c."row", c.column_position, c.house_id, c.status
+       from weeks wk
+       join board_cells c on c.week_id = wk.id
+       where wk.world_id = $1
+       order by wk.sequence, c."row", c.column_position`,
+      [worldId],
+    );
+    await rejectsCode(() => placeHouse({ userId: ownerId, worldId, row: 1, column: 1, houseId: 2 }), "closed");
+    await rejectsCode(() => clearHouse({ userId: ownerId, worldId, row: 2, column: 2 }), "closed");
+    const still = await pool.query(
+      `select wk.sequence, c."row", c.column_position, c.house_id, c.status
+       from weeks wk
+       join board_cells c on c.week_id = wk.id
+       where wk.world_id = $1
+       order by wk.sequence, c."row", c.column_position`,
+      [worldId],
+    );
+    assert.deepEqual(still.rows, frozen.rows);
   } finally {
     await pool.query("delete from worlds where name = $1", [name]);
     if (createdUserIds.length > 0) {

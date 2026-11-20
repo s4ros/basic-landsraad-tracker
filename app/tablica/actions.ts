@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { BoardError, closeWeek, createWorld, cycleTile, readPlacements, savePlacements } from "@/lib/board";
+import { BoardError, clearHouse, closeWeek, createWorld, cycleTile, placeHouse } from "@/lib/board";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -32,16 +32,39 @@ export async function createWorldAction(formData: FormData) {
   redirect(`/tablica/${worldId}`);
 }
 
-export async function savePlacementsAction(formData: FormData) {
+export async function placeHouseAction(formData: FormData) {
+  const path = worldPath(formData.get("worldId"));
+  const userId = await editorId();
+  if (!path || !userId) redirect(path ? `${path}?error=forbidden` : "/tablica?error=forbidden");
+
+  const houseRaw = formData.get("houseId");
+  const houseId = typeof houseRaw === "string" && /^[0-9]+$/.test(houseRaw) ? Number(houseRaw) : Number.NaN;
+  try {
+    await placeHouse({
+      userId,
+      worldId: path.slice("/tablica/".length),
+      row: Number(formData.get("row")),
+      column: Number(formData.get("column")),
+      houseId,
+    });
+  } catch (error) {
+    if (error instanceof BoardError) redirect(`${path}?error=${error.code}`);
+    throw error;
+  }
+  redirect(path);
+}
+
+export async function clearHouseAction(formData: FormData) {
   const path = worldPath(formData.get("worldId"));
   const userId = await editorId();
   if (!path || !userId) redirect(path ? `${path}?error=forbidden` : "/tablica?error=forbidden");
 
   try {
-    await savePlacements({
+    await clearHouse({
       userId,
       worldId: path.slice("/tablica/".length),
-      cells: readPlacements(formData),
+      row: Number(formData.get("row")),
+      column: Number(formData.get("column")),
     });
   } catch (error) {
     if (error instanceof BoardError) redirect(`${path}?error=${error.code}`);

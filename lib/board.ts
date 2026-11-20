@@ -360,6 +360,80 @@ export async function savePlacements(input: { userId: string; worldId: string; c
   });
 }
 
+function isGridSlot(row: number, column: number) {
+  return Number.isInteger(row) && Number.isInteger(column) && row >= 1 && row <= 5 && column >= 1 && column <= 5;
+}
+
+export async function placeHouse(input: {
+  userId: string;
+  worldId: string;
+  row: number;
+  column: number;
+  houseId: number;
+}) {
+  if (!isUuid(input.userId) || !isUuid(input.worldId)) throw new BoardError("forbidden");
+  if (!isGridSlot(input.row, input.column)) throw new BoardError("missing");
+  if (!Number.isInteger(input.houseId) || input.houseId < 1) throw new BoardError("missing");
+
+  await withTransaction(async (client) => {
+    await assertEditor(client, input.userId, input.worldId);
+    const weekId = await openWeekId(client, input.worldId);
+    const known = await client.query("select 1 from houses where id = $1", [input.houseId]);
+    if ((known.rowCount ?? 0) === 0) throw new BoardError("missing");
+
+    const current = await client.query<{ house_id: number | null }>(
+      `select house_id
+       from board_cells
+       where week_id = $1 and "row" = $2 and column_position = $3
+       for update`,
+      [weekId, input.row, input.column],
+    );
+    const cell = current.rows[0];
+    if (!cell) throw new BoardError("missing");
+    if (cell.house_id !== null) throw new BoardError("taken");
+
+    try {
+      const updated = await client.query(
+        `update board_cells
+         set house_id = $4, status = 'idle'
+         where week_id = $1 and "row" = $2 and column_position = $3 and house_id is null`,
+        [weekId, input.row, input.column, input.houseId],
+      );
+      if ((updated.rowCount ?? 0) === 0) throw new BoardError("taken");
+    } catch (error) {
+      if (error instanceof BoardError) throw error;
+      if (uniqueViolation(error)) throw new BoardError("taken");
+      throw error;
+    }
+  });
+}
+
+export async function clearHouse(input: { userId: string; worldId: string; row: number; column: number }) {
+  if (!isUuid(input.userId) || !isUuid(input.worldId)) throw new BoardError("forbidden");
+  if (!isGridSlot(input.row, input.column)) throw new BoardError("missing");
+
+  await withTransaction(async (client) => {
+    await assertEditor(client, input.userId, input.worldId);
+    const weekId = await openWeekId(client, input.worldId);
+    const current = await client.query<{ house_id: number | null }>(
+      `select house_id
+       from board_cells
+       where week_id = $1 and "row" = $2 and column_position = $3
+       for update`,
+      [weekId, input.row, input.column],
+    );
+    const cell = current.rows[0];
+    if (!cell) throw new BoardError("missing");
+    if (cell.house_id === null) throw new BoardError("empty");
+    await client.query(
+      `update board_cells
+       set house_id = null, status = 'idle'
+       where week_id = $1 and "row" = $2 and column_position = $3`,
+      [weekId, input.row, input.column],
+    );
+  });
+}
+
 export async function cycleTile(input: { userId: string; worldId: string; row: number; column: number }) {
   if (!isUuid(input.userId) || !isUuid(input.worldId)) throw new BoardError("forbidden");
   if (input.row < 1 || input.row > 5 || input.column < 1 || input.column > 5) throw new BoardError("missing");
